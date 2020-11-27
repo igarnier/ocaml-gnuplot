@@ -293,6 +293,32 @@ module Series : sig
     -> (date * float) list
     -> t
 
+  (** [histeps data] creates a data series for a histogram of Y values with
+      style 'histeps'.
+      Optional binning of the input data can be specified using the
+      [bins] and [binwidth] arguments. *)
+  val histeps
+    :  ?title:string
+    -> ?color:Color.t
+    -> ?weight:int
+    -> ?bins:int
+    -> ?binwidth:float
+    -> float list
+    -> t
+
+  (** [boxes data] creates a data series for a bar graph of Y values.
+      Optional binning of the input data can be specified using the
+      [bins] and [binwidth] arguments.  *)
+  val boxes
+    :  ?title:string
+    -> ?color:Color.t
+    -> ?weight:int
+    -> ?fill:Filling.t
+    -> ?bins:int
+    -> ?binwidth:float
+    -> float list
+    -> t
+
   (** [histogram data] creates a data series for a histogram of Y values. *)
   val histogram
     :  ?title:string

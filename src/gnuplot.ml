@@ -304,8 +304,12 @@ type kind =
   | Points
   | Linespoints
   | Steps
+  | Histeps of preprocessing_options
+  | Boxes of preprocessing_options
   | Histogram
   | Candlesticks
+
+and preprocessing_options = { bins : int option; binwidth : float option }
 
 type dim2 = Dim2
 type dim3 = Dim3
@@ -328,20 +332,30 @@ module Series = struct
 
   let custom cmd data = {cmd; data}
 
+  let preprocessing_text { bins; binwidth } =
+    match bins, binwidth with
+    | None, None -> ""
+    | Some nbins, None -> sprintf "bins=%d" nbins
+    | None, Some width -> sprintf "bins binwidth=%f" width
+    | Some nbins, Some width ->
+       sprintf "bins=%d binwidth=%f" nbins width
+
   let create ?title ?color ?weight ?fill kind data =
-    let kind_text =
+    let kind_text, preprocessing =
       match kind with
-      | Lines -> "lines"
-      | Points -> "points"
-      | Linespoints -> "linespoints"
-      | Steps -> "steps"
-      | Histogram -> "histogram"
-      | Candlesticks -> "candlesticks"
+      | Lines -> "lines", ""
+      | Points -> "points", ""
+      | Linespoints -> "linespoints", ""
+      | Steps -> "steps", ""
+      | Histeps pre -> "histeps", preprocessing_text pre
+      | Boxes pre -> "boxes", preprocessing_text pre
+      | Histogram -> "histogram", ""
+      | Candlesticks -> "candlesticks", ""
     in
     let cmd =
       String.concat "" [
         (match data with
-         | Data_Y _ -> " '-' using 1 with " ^ kind_text
+         | Data_Y _ -> " '-' using 1 " ^ preprocessing ^ " with " ^ kind_text
          | Data_XY _ | Data_TimeY _ | Data_DateY _ ->
            " '-' using 1:2 with " ^ kind_text
          | Data_TimeOHLC _ | Data_DateOHLC _ ->
@@ -411,6 +425,14 @@ module Series = struct
   let steps_datey ?title ?color ?weight data =
     create ?title ?color ?weight Steps (Data_DateY data)
 
+  let histeps ?title ?color ?weight ?bins ?binwidth data =
+    let kind = Histeps { bins; binwidth } in
+    create ?title ?color ?weight kind (Data_Y data)
+
+  let boxes ?title ?color ?weight ?fill ?bins ?binwidth  data =
+    let kind = Boxes { bins; binwidth } in
+    create ?title ?color ?weight ?fill kind (Data_Y data)
+
   let histogram ?title ?color ?weight ?fill data =
     create ?title ?color ?weight ?fill Histogram (Data_Y data)
 
@@ -448,6 +470,8 @@ module Splots = struct
       | Points -> "points"
       | Linespoints -> "linespoints"
       | Steps -> "steps"
+      | Histeps _ -> "histeps"
+      | Boxes _ -> "boxes"
       | Histogram -> "histogram"
       | Candlesticks -> "candlesticks"
     in
